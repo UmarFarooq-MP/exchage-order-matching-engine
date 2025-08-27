@@ -1,0 +1,47 @@
+# ========================
+# Build artifacts
+# ========================
+cmake-build*/
+build/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+compile_commands.json
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.a
+*.lib
+
+# ========================
+# CLion / JetBrains IDE
+# ========================
+.idea/
+*.iml
+
+# ========================
+# macOS system files
+# ========================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ========================
+# Logs / temp
+# ========================
+*.log
+*.tmp
+*.swp
+*.swo
+
+# ========================
+# Other generated
+# ========================
+*.gcno
+*.gcda
+*.gcov

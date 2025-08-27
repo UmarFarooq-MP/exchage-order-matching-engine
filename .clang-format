@@ -1,0 +1,28 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# --- Braces ---
+BreakBeforeBraces: Attach      # opening brace on same line
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# --- Arguments & Parameters ---
+AlignAfterOpenBracket: AlwaysBreak
+BinPackArguments: false
+BinPackParameters: false
+
+# --- Pointers & References ---
+DerivePointerAlignment: false
+PointerAlignment: Left   # int* ptr instead of int *ptr
+
+# --- Spaces ---
+SpacesInParentheses: false
+SpaceAfterCStyleCast: true
+
+# --- Function-Specific ---
+IndentCaseLabels: true
+ContinuationIndentWidth: 4     # when breaking arguments/parameters, indent by 4
