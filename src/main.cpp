@@ -15,14 +15,14 @@ int main() {
         Broadcaster broadcaster;
         MatchingEngine engine("usdtbtc", &wal, &broadcaster);
 
-        // insert ~100 orders
-        for (int i = 0; i < 1000000; ++i) {
+        // insert ~200k orders
+        for (int i = 0; i < 200000; ++i) {
             bool isBuy = (rand() % 2 == 0);
             uint64_t price = 95 + rand() % 10;
             uint64_t qty   = 1 + rand() % 20;
             engine.addOrder(isBuy, price, qty);
 
-            if ((i + 1) % 25 == 0) {
+            if ((i + 1) % 25000 == 0) {   // log progress every 25k
                 std::cout << "--- Inserted " << (i + 1) << " orders ---\n";
             }
         }

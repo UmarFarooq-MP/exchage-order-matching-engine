@@ -5,12 +5,12 @@
 namespace wal {
 
     // wal_manager.cpp
-    WalManager::WalManager(const std::string& dbPath) : dbPath_(dbPath) {
+    WalManager::WalManager(const std::string& path) : dbPath_(path) {
         rocksdb::Options options;
         options.create_if_missing = true;
         options.create_missing_column_families = true;
 
-        std::vector<rocksdb::ColumnFamilyDescriptor> cfDescriptors = {
+        const std::vector<rocksdb::ColumnFamilyDescriptor> cfDescriptors = {
             {rocksdb::kDefaultColumnFamilyName, rocksdb::ColumnFamilyOptions()},
             {"in", rocksdb::ColumnFamilyOptions()},
             {"out", rocksdb::ColumnFamilyOptions()},
@@ -43,31 +43,31 @@ namespace wal {
 
 uint64_t WalManager::appendInbound(const std::string& type, const nlohmann::json& payload) {
     uint64_t id = ++seq_;
-    nlohmann::json record = {{"id", id}, {"type", type}, {"payload", payload}};
-    std::string key = std::to_string(id);
+    const nlohmann::json record = {{"id", id}, {"type", type}, {"payload", payload}};
+    const std::string key = std::to_string(id);
     auto s = db_->Put(rocksdb::WriteOptions(), inboundCF_, key, record.dump());
     if (!s.ok()) throw std::runtime_error("appendInbound failed: " + s.ToString());
     return id;
 }
 
-void WalManager::markProcessed(uint64_t seq, const nlohmann::json& payload) {
-    std::string key = std::to_string(seq);
+void WalManager::markProcessed(const uint64_t seq, const nlohmann::json& payload) const {
+    const std::string key = std::to_string(seq);
     auto s = db_->Put(rocksdb::WriteOptions(), outboundCF_, key, payload.dump());
     if (!s.ok()) throw std::runtime_error("markProcessed failed: " + s.ToString());
 }
 
 void WalManager::saveSnapshot(const std::string& symbol,
                               const nlohmann::json& snapshot,
-                              uint64_t seq) {
-    std::string key = symbol + ":" + std::to_string(seq);
+                              const uint64_t seq) const {
+    const std::string key = symbol + ":" + std::to_string(seq);
     auto s = db_->Put(rocksdb::WriteOptions(), snapshotCF_, key, snapshot.dump());
     if (!s.ok()) throw std::runtime_error("saveSnapshot failed: " + s.ToString());
 }
 
 std::optional<nlohmann::json> WalManager::loadSnapshot(const std::string& symbol,
-                                                       uint64_t& lastSeq) {
-    std::unique_ptr<rocksdb::Iterator> it(db_->NewIterator(rocksdb::ReadOptions(), snapshotCF_));
-    std::string prefix = symbol + ":";
+                                                       uint64_t& lastSeq) const {
+    const std::unique_ptr<rocksdb::Iterator> it(db_->NewIterator(rocksdb::ReadOptions(), snapshotCF_));
+    const std::string prefix = symbol + ":";
     it->Seek(prefix);
     nlohmann::json result;
     bool found = false;
@@ -81,9 +81,9 @@ std::optional<nlohmann::json> WalManager::loadSnapshot(const std::string& symbol
     return found ? std::optional<nlohmann::json>(result) : std::nullopt;
 }
 
-std::vector<WalRecord> WalManager::replayInbound(uint64_t from) {
+std::vector<WalRecord> WalManager::replayInbound(const uint64_t from) const {
     std::vector<WalRecord> records;
-    std::unique_ptr<rocksdb::Iterator> it(db_->NewIterator(rocksdb::ReadOptions(), inboundCF_));
+    const std::unique_ptr<rocksdb::Iterator> it(db_->NewIterator(rocksdb::ReadOptions(), inboundCF_));
     it->Seek(std::to_string(from));
     for (; it->Valid(); it->Next()) {
         auto val = nlohmann::json::parse(it->value().ToString());
@@ -93,7 +93,7 @@ std::vector<WalRecord> WalManager::replayInbound(uint64_t from) {
     return records;
 }
 
-bool WalManager::isProcessed(uint64_t seq) {
+bool WalManager::isProcessed(const uint64_t seq) const {
     std::string val;
     auto s = db_->Get(rocksdb::ReadOptions(), outboundCF_, std::to_string(seq), &val);
     return s.ok();

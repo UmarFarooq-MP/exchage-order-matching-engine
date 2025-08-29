@@ -27,15 +27,15 @@ namespace wal {
 
         // Write operations
         uint64_t appendInbound(const std::string& type, const nlohmann::json& payload);
-        void markProcessed(uint64_t seq, const nlohmann::json& payload);
+        void markProcessed(uint64_t seq, const nlohmann::json& payload) const;
 
         // Snapshot
-        void saveSnapshot(const std::string& symbol, const nlohmann::json& snapshot, uint64_t seq);
-        std::optional<nlohmann::json> loadSnapshot(const std::string& symbol, uint64_t& lastSeq);
+        void saveSnapshot(const std::string& symbol, const nlohmann::json& snapshot, uint64_t seq) const;
+        std::optional<nlohmann::json> loadSnapshot(const std::string& symbol, uint64_t& lastSeq) const;
 
         // Recovery
-        std::vector<WalRecord> replayInbound(uint64_t from = 1);
-        bool isProcessed(uint64_t seq);
+        std::vector<WalRecord> replayInbound(uint64_t from = 1) const;
+        bool isProcessed(uint64_t seq) const;
 
     private:
         std::string dbPath_;

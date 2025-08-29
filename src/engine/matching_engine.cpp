@@ -46,7 +46,6 @@ namespace engine {
             if (!fromReplay) {
                 nlohmann::json payload = {{"id", orderId}};
                 uint64_t seq = wal_->appendInbound("cancel", payload);
-                std::cout << "[ENGINE] Canceling order " << orderId << " seq=" << seq << "\n";
             }
             orderBook_.cancel(order);
         } else {
@@ -79,19 +78,15 @@ namespace engine {
     }
 
     // --- Listeners ---
-    void MatchingEngine::on_accept(const simple::SimpleOrderPtr& order) {
-        std::cout << "[LISTENER] Order " << order->order_id() << " accepted\n";
-    }
+    void MatchingEngine::on_accept(const simple::SimpleOrderPtr& order) {}
 
-    void MatchingEngine::on_reject(const simple::SimpleOrderPtr& order, const char* reason) {
-        std::cout << "[LISTENER] Order " << order->order_id() << " rejected: " << reason << "\n";
-    }
+    void MatchingEngine::on_reject(const simple::SimpleOrderPtr& order, const char* reason) {}
 
     void MatchingEngine::on_fill(const simple::SimpleOrderPtr& order,
                                  const simple::SimpleOrderPtr& matched_order,
                                  book::Quantity qty,
                                  book::Price price) {
-        nlohmann::json trade = {
+        const nlohmann::json trade = {
             {"orderId", order->order_id()},
             {"matchedId", matched_order->order_id()},
             {"qty", qty},
