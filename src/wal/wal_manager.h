@@ -1,25 +1,22 @@
-//
-// Created by Umar Farooq on 28/08/2025.
-//
-
 #ifndef OME_WAL_MANAGER_H
 #define OME_WAL_MANAGER_H
 
 #include <rocksdb/db.h>
 #include <rocksdb/options.h>
+#include <rocksdb/slice.h>
+#include <rocksdb/utilities/checkpoint.h>
 #include <nlohmann/json.hpp>
 
 #include <string>
 #include <vector>
-#include <memory>
-#include <cstdint>
+#include <optional>
+#include <atomic>
 
 namespace wal {
 
-    // --- WAL record ---
     struct WalRecord {
-        uint64_t id;           // sequence number
-        std::string type;      // e.g. "add", "cancel", "trade"
+        uint64_t id;
+        std::string type;
         nlohmann::json payload;
     };
 
@@ -28,41 +25,26 @@ namespace wal {
         explicit WalManager(const std::string& path);
         ~WalManager();
 
-        WalManager(const WalManager&) = delete;
-        WalManager& operator=(const WalManager&) = delete;
-
-        /// Append inbound op before engine processes it
+        // Write operations
         uint64_t appendInbound(const std::string& type, const nlohmann::json& payload);
-
-        /// Mark record as processed (after engine + broadcast OK)
         void markProcessed(uint64_t seq, const nlohmann::json& payload);
 
-        /// Replay inbound ops starting from last snapshot or from 1
-        std::vector<WalRecord> replayInbound(uint64_t fromSeq = 1);
+        // Snapshot
+        void saveSnapshot(const std::string& symbol, const nlohmann::json& snapshot, uint64_t seq);
+        std::optional<nlohmann::json> loadSnapshot(const std::string& symbol, uint64_t& lastSeq);
 
-        /// Check if a record has been processed (exists in WAL-Out)
+        // Recovery
+        std::vector<WalRecord> replayInbound(uint64_t from = 1);
         bool isProcessed(uint64_t seq);
-
-        /// Save order book snapshot at given sequence
-        void saveSnapshot(const std::string& symbol,
-                          const nlohmann::json& snapshot,
-                          uint64_t seq);
-
-        /// Load latest snapshot for symbol
-        nlohmann::json loadSnapshot(const std::string& symbol,
-                                    uint64_t& lastSeq);
 
     private:
         std::string dbPath_;
-        rocksdb::DB* db_;                // main RocksDB instance
-        std::unique_ptr<rocksdb::DB> dbGuard_;
-
-        uint64_t nextSeq_;               // monotonically increasing sequence
-
-        // column families
-        rocksdb::ColumnFamilyHandle* cfInbound_;
-        rocksdb::ColumnFamilyHandle* cfOutbound_;
-        rocksdb::ColumnFamilyHandle* cfSnapshot_;
+        rocksdb::DB* db_{nullptr};
+        rocksdb::ColumnFamilyHandle* inboundCF_{nullptr};
+        rocksdb::ColumnFamilyHandle* outboundCF_{nullptr};
+        rocksdb::ColumnFamilyHandle* snapshotCF_{nullptr};
+        std::vector<rocksdb::ColumnFamilyHandle*> handles_;
+        std::atomic<uint64_t> seq_{0};
     };
 
 } // namespace wal

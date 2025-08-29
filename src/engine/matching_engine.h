@@ -3,10 +3,20 @@
 
 #include <book/order_book.h>
 #include <simple/simple_order.h>
-#include <memory>
 #include <nlohmann/json.hpp>
 #include "../wal/wal_manager.h"
-#include "../broadcast/broadcaster.h"
+#include <memory>
+#include <string>
+#include <iostream>
+
+// Minimal Broadcaster stub
+class Broadcaster {
+public:
+    bool publish(const std::string& topic, const nlohmann::json& msg) {
+        std::cout << "[BROADCAST] topic=" << topic << " msg=" << msg.dump() << "\n";
+        return true;
+    }
+};
 
 namespace engine {
     class MatchingEngine final
@@ -15,14 +25,12 @@ namespace engine {
 
     public:
         MatchingEngine() = delete;
-        MatchingEngine(const MatchingEngine &) = delete;
-        explicit MatchingEngine(const std::string &symbol,
-                                wal::WalManager* wal,
-                                Broadcaster* broadcaster);
+        MatchingEngine(const MatchingEngine&) = delete;
+        explicit MatchingEngine(const std::string& symbol, wal::WalManager* wal, Broadcaster* broadcaster);
         virtual ~MatchingEngine() = default;
 
-        void addOrder(bool isBuy, uint64_t price, uint64_t qty);
-        void removeOrder(uint32_t orderId);
+        void addOrder(bool isBuy, uint64_t price, uint64_t qty, bool fromReplay = false);
+        void removeOrder(uint32_t orderId, bool fromReplay = false);
 
         void takeSnapshot();
         void recover();
@@ -52,7 +60,8 @@ namespace engine {
         wal::WalManager* wal_;
         Broadcaster* broadcaster_;
 
-        uint64_t processedCount_{0}; // for snapshot trigger
+        uint64_t processedCount_{0};
     };
 }
-#endif //OME_MATCHING_ENGINE_H
+
+#endif // OME_MATCHING_ENGINE_H
